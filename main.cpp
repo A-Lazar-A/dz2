@@ -11,6 +11,7 @@
 #include <iostream>
 #include <string>
 #include <fstream>
+#include <sstream>
 
 
 void encryption(int &pas, std::string &text) {
@@ -46,16 +47,13 @@ void encryption(int &pas, std::string &text) {
     }
 }
 
-std::string decryption(int &pas, int &len, char sh[]) {
+std::string decryption(int &pas, std::string sh) {
     srand(pas);
     int decr;
     std::string answ;
-    if (len % 2 != 0) {
-        sh[len] = 0;
-    }
-    for (int i = 0; i < len; i += 2) {
+    for (int i = 0; i < static_cast<int>(sh.length()); i += 2) {
         if (sh[i + 1] == 0) {
-            decr = static_cast <int>(sh[i]) & 255;
+            decr = static_cast<int>(sh[i]) & 255;
             decr ^= rand();
             decr &= 255;
             int buf;
@@ -82,6 +80,12 @@ std::string decryption(int &pas, int &len, char sh[]) {
     return answ;
 }
 
+std::string slurp(std::ifstream &in) {
+    std::stringstream sstr;
+    sstr << in.rdbuf();
+    return sstr.str();
+}
+
 int main() {
     std::string mode;
     std::string path_file;
@@ -97,10 +101,8 @@ int main() {
         std::string text;
         std::cin.ignore();
         std::getline(std::cin, text);
-        int len = static_cast<int>(text.length());
         encryption(password, text);
         //write length of the message and the message
-        file.write((char *) &len, sizeof(len));
         for (char &i : text) {
             file.write((char *) &i, sizeof(char));
         }
@@ -115,12 +117,9 @@ int main() {
         std::cout << "Enter the password" << std::endl;
         int password;
         std::cin >> password;
-        int len;
-        file.read((char *) &len, sizeof(len));
-        char sh[len];
-        file.read((char *) &sh, sizeof(sh));
+        std::string sh = slurp(file);
         file.close();
         std::cout << "Message is:" << std::endl;
-        std::cout << decryption(password, len, sh);
+        std::cout << decryption(password, sh);
     }
 }
